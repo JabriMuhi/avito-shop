@@ -1,0 +1,75 @@
+run:
+  go: "1.21"
+  concurrency: 8
+  deadline: 3m
+  skip-files:
+    - ".*_test.go"
+    - "*/mocks/.*"
+
+output:
+  format: colored-line-number
+  new: false
+
+linters:
+  enable:
+    - revive
+    - govet
+    - staticcheck
+    - gosec
+    - errcheck
+    - gofmt
+    - goimports
+    - unconvert
+    - ineffassign
+    - bodyclose
+    - sqlclosecheck
+
+  disable:
+    - maligned
+    - gocyclo
+
+  presets:
+    - bugs
+    - unused
+    - performance
+    - style
+
+linters-settings:
+  revive:
+    rules:
+      - name: package-comments
+      - name: exported
+        arguments: [disableStutteringCheck]
+      - name: var-naming
+        arguments: [useMixedCase]
+
+  govet:
+    check-shadowing: true
+    settings:
+      printf:
+        funcs:
+          - Wrap
+          - Wrapf
+
+  staticcheck:
+    checks:
+      - "all"
+      - "-ST1000"
+      - "-SA1019"
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - errcheck
+
+    - text: "Error return value of .* is not checked"
+      linters:
+        - errcheck
+
+    - path: internal/mocks/
+      linters:
+        - revive
+
+severity:
+  default-severity: warning

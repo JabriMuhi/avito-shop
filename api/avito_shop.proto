@@ -1,0 +1,85 @@
+syntax = "proto3";
+
+package avito;
+
+import "third_party/proto/google/api/annotations.proto";
+
+option go_package = "./avito";
+
+service AvitoShop {
+  rpc GetInfo (InfoRequest) returns (InfoResponse) {
+    option (google.api.http) = {
+      get: "/api/info"
+    };
+  }
+
+  rpc SendCoin (SendCoinRequest) returns (SendCoinResponse) {
+    option (google.api.http) = {
+      post: "/api/sendCoin"
+      body: "*"
+    };
+  }
+
+  rpc BuyItem (BuyItemRequest) returns (BuyItemResponse) {
+    option (google.api.http) = {
+      post: "/api/buy/{item}"
+      body: "*"
+    };
+  }
+
+  rpc Authenticate (AuthRequest) returns (AuthResponse) {
+    option (google.api.http) = {
+      post: "/api/auth"
+      body: "*"
+    };
+  }
+}
+
+message InfoRequest {}
+
+message InfoResponse {
+  int64 coins = 1;
+  repeated InventoryItem inventory = 2;
+  CoinHistory coinHistory = 3;
+}
+
+message InventoryItem {
+  string type = 1;
+  int32 quantity = 2;
+}
+
+message CoinHistory {
+  repeated Transaction received = 1;
+  repeated Transaction sent = 2;
+}
+
+message Transaction {
+  string user = 1;
+  int64 amount = 2;
+}
+
+message SendCoinRequest {
+  string toUser = 1;
+  int32 amount = 2;
+}
+
+message SendCoinResponse {}
+
+message BuyItemRequest {
+  string item = 1;
+}
+
+message BuyItemResponse {}
+
+message AuthRequest {
+  string username = 1;
+  string password = 2;
+}
+
+message AuthResponse {
+  string token = 1;
+}
+
+message ErrorResponse {
+  string errors = 1;
+}
