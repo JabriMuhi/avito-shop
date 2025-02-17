@@ -12,32 +12,41 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/joho/godotenv"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"log"
 	"net"
 	"net/http"
+	"os"
 	"time"
 
 	_ "github.com/lib/pq"
 )
 
 func main() {
-	lis, err := net.Listen("tcp", ":8081")
+
+	err := godotenv.Load("./.env")
+	if err != nil {
+		log.Fatalf("Error loading .env file")
+	}
+
+	grpcPort := os.Getenv("GRPC_SERVER_PORT")
+	httpPort := os.Getenv("HTTP_SERVER_PORT")
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%v", grpcPort))
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	dbUser := "postgres"
-	dbPassword := "password"
-	dbName := "shop"
-	dbHost := "db"
-	dbPort := "5432"
-	sslMode := "disable"
-
-	connStr := fmt.Sprintf("user=%s password=%s dbname=%s host=%s port=%s sslmode=%s",
-		dbUser, dbPassword, dbName, dbHost, dbPort, sslMode)
+	connStr := fmt.Sprintf(
+		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		os.Getenv("DATABASE_HOST"),
+		os.Getenv("DATABASE_PORT"),
+		os.Getenv("DATABASE_USER"),
+		os.Getenv("DATABASE_PASSWORD"),
+		os.Getenv("DATABASE_NAME"),
+	)
 
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
@@ -93,17 +102,17 @@ func main() {
 	ctx := context.Background()
 	opts := []grpc.DialOption{grpc.WithInsecure()}
 
-	err = avito.RegisterAvitoShopHandlerFromEndpoint(ctx, mux, "localhost:8080", opts)
+	err = avito.RegisterAvitoShopHandlerFromEndpoint(ctx, mux, fmt.Sprintf("localhost:%v", grpcPort), opts)
 	if err != nil {
 		log.Fatal("Failed to register gRPC Gateway:", err)
 	}
 
 	httpServer := &http.Server{
-		Addr:    ":8080",
+		Addr:    fmt.Sprintf(":%v", httpPort),
 		Handler: mux,
 	}
 
-	fmt.Println("Starting HTTP server on :8080")
+	fmt.Println("Starting HTTP server on :" + httpPort)
 	if err := httpServer.ListenAndServe(); err != nil {
 		log.Fatal("Failed to start HTTP server:", err)
 	}
